@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>MAEK7 Exam Grading | تصحيح الامتحانات الآلي بالذكاء الاصطناعي</title>
+    <title>MAEK7 Advanced Exam Grading | تصحيح الامتحانات بنموذج إجابة مصور</title>
     <script type="importmap">
         {
             "imports": {
@@ -31,28 +31,29 @@
         .api-input { background: var(--bg-input); border: 1px solid var(--border); padding: 8px 16px; border-radius: 40px; color: var(--text); width: 260px; }
         .btn { background: var(--primary); border: none; padding: 8px 16px; border-radius: 40px; color: white; cursor: pointer; margin: 4px; }
         .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
-        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px,1fr)); gap: 20px; }
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px,1fr)); gap: 20px; }
         .card { background: var(--bg-card); border-radius: 28px; padding: 24px; border: 1px solid var(--border); margin-bottom: 20px; }
-        .card-title { font-size: 1.3rem; border-right: 4px solid var(--primary); padding-right: 12px; margin-bottom: 20px; }
-        textarea, input, select { width: 100%; background: var(--bg-input); border: 1px solid var(--border); border-radius: 16px; padding: 12px; color: var(--text); margin-bottom: 15px; }
+        .card-title { font-size: 1.2rem; border-right: 4px solid var(--primary); padding-right: 12px; margin-bottom: 20px; }
         .upload-area { border: 2px dashed var(--primary); border-radius: 28px; padding: 20px; text-align: center; cursor: pointer; margin-bottom: 15px; transition: 0.2s; }
         .upload-area:hover { background: var(--bg-input); }
-        .preview-img { max-width: 100%; max-height: 200px; border-radius: 16px; margin-top: 10px; display: none; }
-        .result-box { background: var(--bg-input); border-radius: 20px; padding: 16px; margin-top: 16px; display: none; white-space: pre-wrap; line-height: 1.6; }
-        .grade-card { background: linear-gradient(135deg, var(--primary)20, var(--bg-input)); border-radius: 20px; padding: 20px; margin-top: 15px; }
+        .preview-img { max-width: 100%; max-height: 180px; border-radius: 16px; margin-top: 10px; display: none; object-fit: contain; }
+        .result-box { background: var(--bg-input); border-radius: 20px; padding: 20px; margin-top: 16px; display: none; }
+        .question-result { background: var(--bg-card); border-radius: 16px; padding: 15px; margin-bottom: 15px; border-right: 4px solid; }
         .score-big { font-size: 48px; font-weight: bold; color: var(--primary); }
         .toast { position: fixed; bottom: 20px; left: 20px; background: var(--primary); padding: 12px 24px; border-radius: 40px; z-index: 2000; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; transform: translateX(-100%); } to { opacity: 1; } }
         footer { text-align: center; margin-top: 40px; font-size: 12px; color: var(--text-muted); }
         .loading { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--text); border-radius: 50%; border-top-color: var(--primary); animation: spin 0.8s linear infinite; margin-right: 8px; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        .badge-pass { background: var(--success); color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; }
+        .badge-fail { background: var(--danger); color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
-        <h1>📝 MAEK7 Exam Grading Assistant</h1>
-        <p>تصحيح الامتحانات الآلي بالذكاء الاصطناعي – يدعم الخط اليدوي والعلامات الجزئية</p>
+        <h1>📝 MAEK7 Advanced Exam Grading</h1>
+        <p>تصحيح الامتحانات الآلي – ارفع نموذج الإجابة المصور + ورقة الطالب</p>
     </div>
     <div class="top-bar">
         <input type="password" id="apiKey" class="api-input" placeholder="🔑 مفتاح Gemini API" oninput="saveApiKey()">
@@ -62,33 +63,40 @@
     </div>
 
     <div class="grid-2">
-        <!-- القسم الأيسر: معلومات الامتحان -->
+        <!-- رفع نموذج الإجابة الرسمي -->
         <div class="card">
-            <div class="card-title">📋 معلومات الامتحان والسؤال</div>
-            <input type="text" id="examTitle" placeholder="عنوان الامتحان أو المادة">
-            <input type="text" id="questionText" placeholder="نص السؤال (مثال: اشرح النظرية النسبية...)">
-            <textarea id="modelAnswer" rows="6" placeholder="الإجابة النموذجية (النص الصحيح الكامل)"></textarea>
-            <input type="number" id="maxScore" placeholder="الدرجة القصوى لهذا السؤال" value="10" step="1">
-            
-            <div class="card-title" style="margin-top: 20px;">📸 رفع ورقة إجابة الطالب</div>
-            <div class="upload-area" id="uploadArea">
-                🖼️ اضغط لرفع صورة ورقة الإجابة (يدعم JPG, PNG, PDF)
-                <input type="file" id="studentAnswerImage" accept="image/*,application/pdf" style="display:none;">
+            <div class="card-title">📄 1. نموذج الإجابة الرسمي (المصحح)</div>
+            <div class="upload-area" id="modelUploadArea">
+                🖼️ اضغط لرفع صورة نموذج الإجابة (يحتوي على النقاط والدرجات)
+                <input type="file" id="modelAnswerImage" accept="image/*" style="display:none;">
             </div>
-            <div id="imagePreview" class="preview-img"></div>
-            
-            <button id="gradeBtn" class="btn" style="width:100%; margin-top:10px;">🎯 تصحيح الإجابة الآن</button>
+            <div id="modelPreview" class="preview-img"></div>
+            <div id="modelExtractedInfo" style="font-size: 13px; margin-top: 10px; color: var(--text-muted);"></div>
         </div>
 
-        <!-- القسم الأيمن: نتائج التصحيح -->
+        <!-- رفع ورقة إجابة الطالب -->
         <div class="card">
-            <div class="card-title">📊 نتيجة التصحيح</div>
-            <div id="gradingResult" class="result-box"></div>
-            <div id="gradingDetails" style="display:none;"></div>
+            <div class="card-title">📝 2. ورقة إجابة الطالب</div>
+            <div class="upload-area" id="studentUploadArea">
+                🖼️ اضغط لرفع صورة ورقة إجابة الطالب
+                <input type="file" id="studentAnswerImage" accept="image/*" style="display:none;">
+            </div>
+            <div id="studentPreview" class="preview-img"></div>
         </div>
     </div>
 
-    <footer>🔍 يعتمد النظام على Gemini Vision API لقراءة الخط اليدوي وتحليل الإجابات – يُنصح بمراجعة النتائج من قبل المعلم.</footer>
+    <!-- زر التصحيح -->
+    <div style="text-align: center; margin: 20px 0;">
+        <button id="gradeBtn" class="btn" style="padding: 12px 40px; font-size: 18px;">🎯 بدء التصحيح والمقارنة</button>
+    </div>
+
+    <!-- منطقة النتائج -->
+    <div class="card" id="resultsCard" style="display: none;">
+        <div class="card-title">📊 نتيجة التصحيح</div>
+        <div id="gradingResult" class="result-box"></div>
+    </div>
+
+    <footer>🔍 يعتمد النظام على Gemini Vision API لقراءة النماذج والإجابات ومقارنتها سؤالاً بسؤال.</footer>
 </div>
 
 <script type="module">
@@ -97,92 +105,194 @@
     // عناصر DOM
     const apiInput = document.getElementById('apiKey');
     const apiStatusSpan = document.getElementById('apiStatus');
-    const uploadArea = document.getElementById('uploadArea');
+    
+    const modelUploadArea = document.getElementById('modelUploadArea');
+    const modelAnswerImage = document.getElementById('modelAnswerImage');
+    const modelPreview = document.getElementById('modelPreview');
+    const modelExtractedInfo = document.getElementById('modelExtractedInfo');
+    
+    const studentUploadArea = document.getElementById('studentUploadArea');
     const studentAnswerImage = document.getElementById('studentAnswerImage');
-    const imagePreview = document.getElementById('imagePreview');
-    const examTitle = document.getElementById('examTitle');
-    const questionText = document.getElementById('questionText');
-    const modelAnswer = document.getElementById('modelAnswer');
-    const maxScoreInput = document.getElementById('maxScore');
+    const studentPreview = document.getElementById('studentPreview');
+    
     const gradeBtn = document.getElementById('gradeBtn');
+    const resultsCard = document.getElementById('resultsCard');
     const gradingResult = document.getElementById('gradingResult');
     const themeToggle = document.getElementById('themeToggle');
     const exportResultsBtn = document.getElementById('exportResultsBtn');
 
-    let currentImageBase64 = null;
+    let modelImageBase64 = null;
+    let studentImageBase64 = null;
     let lastGradingResult = null;
 
+    // دوال أساسية
     function hasValidKey() { const key = apiInput.value.trim(); return key && key.length > 10; }
     function updateApiStatus() { apiStatusSpan.innerText = hasValidKey() ? '🟢 مفتاح نشط' : '🔴 مفتاح مفقود'; apiStatusSpan.style.color = hasValidKey() ? '#10b981' : '#ef4444'; }
-    window.saveApiKey = () => { localStorage.setItem('maek7_grading_key', apiInput.value.trim()); updateApiStatus(); };
+    window.saveApiKey = () => { localStorage.setItem('maek7_adv_grading_key', apiInput.value.trim()); updateApiStatus(); };
     function showToast(msg, isErr=false) { const t=document.createElement('div'); t.className='toast'; t.style.background=isErr?'#ef4444':'var(--primary)'; t.innerText=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),3000); }
 
-    // رفع الصورة ومعاينتها
-    uploadArea.onclick = () => studentAnswerImage.click();
-    studentAnswerImage.onchange = (e) => {
+    // رفع نموذج الإجابة
+    modelUploadArea.onclick = () => modelAnswerImage.click();
+    modelAnswerImage.onchange = (e) => {
         const file = e.target.files[0];
         if(file) {
             const reader = new FileReader();
             reader.onload = (ev) => {
-                currentImageBase64 = ev.target.result;
-                imagePreview.style.display = 'block';
-                imagePreview.innerHTML = `<img src="${currentImageBase64}" alt="ورقة الإجابة" style="max-width:100%; max-height:200px; border-radius:16px;">`;
+                modelImageBase64 = ev.target.result;
+                modelPreview.style.display = 'block';
+                modelPreview.innerHTML = `<img src="${modelImageBase64}" alt="نموذج الإجابة">`;
+                modelExtractedInfo.innerHTML = '✅ تم رفع نموذج الإجابة. جاهز للتحليل.';
             };
             reader.readAsDataURL(file);
         }
     };
 
-    // استخراج النص من الصورة باستخدام Gemini Vision
-    async function extractTextFromImage(base64Image) {
-        if(!hasValidKey()) throw new Error("مفتاح Gemini مفقود");
-        const genAI = new GoogleGenerativeAI(apiInput.value.trim());
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-        const prompt = `استخرج النص المكتوب بخط اليد من هذه الصورة بدقة. إذا كان النص غير واضح، اكتب ما يمكن قراءته. أخرج النص فقط دون أي شرح إضافي.`;
-        const imagePart = { inlineData: { data: base64Image.split(',')[1], mimeType: "image/jpeg" } };
-        const result = await model.generateContent([prompt, imagePart]);
-        return result.response.text();
-    }
+    // رفع ورقة الطالب
+    studentUploadArea.onclick = () => studentAnswerImage.click();
+    studentAnswerImage.onchange = (e) => {
+        const file = e.target.files[0];
+        if(file) {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                studentImageBase64 = ev.target.result;
+                studentPreview.style.display = 'block';
+                studentPreview.innerHTML = `<img src="${studentImageBase64}" alt="ورقة الطالب">`;
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
-    // تقييم الإجابة ومقارنتها بالإجابة النموذجية
-    async function evaluateAnswer(modelAnswerText, studentAnswerText, maxScore, question) {
+    // استخراج الأسئلة والدرجات من نموذج الإجابة
+    async function extractQuestionsFromModel(imageBase64) {
         if(!hasValidKey()) throw new Error("مفتاح Gemini مفقود");
         const genAI = new GoogleGenerativeAI(apiInput.value.trim());
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
         
         const prompt = `
-أنت معلم خبير في التصحيح الآلي. قم بتقييم إجابة الطالب التالية مقارنة بالإجابة النموذجية.
+أنت خبير في تحليل نماذج الإجابة الرسمية للامتحانات. الصورة المرفقة تحتوي على نموذج إجابة مصحح.
 
-**السؤال:** ${question}
+المطلوب: استخرج جميع الأسئلة الموجودة في النموذج مع:
+1. رقم السؤال
+2. النص الكامل للسؤال (إن وجد)
+3. الإجابة النموذجية (النقاط الرئيسية أو الإجابة الكاملة)
+4. الدرجة المخصصة للسؤال
 
-**الإجابة النموذجية (الصحيحة):**
-${modelAnswerText}
+أخرج النتيجة بتنسيق JSON فقط بالشكل التالي:
+[
+    {
+        "question_number": 1,
+        "question_text": "نص السؤال",
+        "model_answer": "الإجابة النموذجية",
+        "max_score": 10
+    }
+]
 
-**إجابة الطالب (المستخرجة من الصورة):**
-${studentAnswerText}
+إذا كان السؤال مقسماً إلى نقاط فرعية (أ، ب، ج) فقم بتضمينها ضمن model_answer بشكل منظم.
+        `;
+        
+        const imagePart = { inlineData: { data: imageBase64.split(',')[1], mimeType: "image/jpeg" } };
+        const result = await model.generateContent([prompt, imagePart]);
+        const responseText = result.response.text();
+        
+        // استخراج JSON من النص
+        let jsonStr = responseText;
+        const jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/);
+        if(jsonMatch) jsonStr = jsonMatch[1];
+        else {
+            const braceMatch = responseText.match(/\[[\s\S]*\]/);
+            if(braceMatch) jsonStr = braceMatch[0];
+        }
+        
+        try {
+            return JSON.parse(jsonStr);
+        } catch(e) {
+            console.error("JSON Parse Error:", responseText);
+            // رد افتراضي
+            return [
+                { question_number: 1, question_text: "السؤال الأول", model_answer: "الإجابة النموذجية غير متوفرة", max_score: 10 }
+            ];
+        }
+    }
 
-**الدرجة القصوى للسؤال:** ${maxScore}
+    // استخراج إجابات الطالب من ورقة الإجابة
+    async function extractStudentAnswers(imageBase64) {
+        if(!hasValidKey()) throw new Error("مفتاح Gemini مفقود");
+        const genAI = new GoogleGenerativeAI(apiInput.value.trim());
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        
+        const prompt = `
+الصورة المرفقة تحتوي على ورقة إجابة طالب. قم باستخراج إجابات الطالب لكل سؤال.
+
+المطلوب: أخرج JSON بالشكل التالي:
+[
+    {
+        "question_number": 1,
+        "student_answer": "نص إجابة الطالب لهذا السؤال"
+    }
+]
+
+إذا كان السؤال مقسماً إلى نقاط فرعية (أ، ب، ج)، قم بتضمين إجاباتها ضمن student_answer.
+        `;
+        
+        const imagePart = { inlineData: { data: imageBase64.split(',')[1], mimeType: "image/jpeg" } };
+        const result = await model.generateContent([prompt, imagePart]);
+        const responseText = result.response.text();
+        
+        let jsonStr = responseText;
+        const jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/);
+        if(jsonMatch) jsonStr = jsonMatch[1];
+        else {
+            const braceMatch = responseText.match(/\[[\s\S]*\]/);
+            if(braceMatch) jsonStr = braceMatch[0];
+        }
+        
+        try {
+            return JSON.parse(jsonStr);
+        } catch(e) {
+            console.error("JSON Parse Error:", responseText);
+            return [];
+        }
+    }
+
+    // مقارنة إجابات الطالب مع النموذج
+    async function compareAnswers(questions, studentAnswers, totalScore) {
+        if(!hasValidKey()) throw new Error("مفتاح Gemini مفقود");
+        const genAI = new GoogleGenerativeAI(apiInput.value.trim());
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        
+        const prompt = `
+أنت معلم خبير في التصحيح. قم بتقييم إجابات الطالب ومقارنتها بالإجابات النموذجية.
+
+**قائمة الأسئلة والإجابات النموذجية والدرجات:**
+${JSON.stringify(questions, null, 2)}
+
+**إجابات الطالب:**
+${JSON.stringify(studentAnswers, null, 2)}
 
 **المطلوب:**
-1. درجة من 0 إلى ${maxScore} (مع إمكانية العلامات الجزئية للإجابات الصحيحة جزئياً)
-2. نسبة التشابه بين الإجابتين (0-100%)
-3. نقاط القوة في إجابة الطالب (ما الذي أجاد فيه؟)
-4. نقاط الضعف أو المعلومات الناقصة (ما الذي فاته؟)
-5. اقتراحات للتحسين
-
-**أخرج التقييم بصيغة JSON فقط، بدون أي نص إضافي، بالشكل التالي:**
+لكل سؤال، قم بتقدير درجة الطالب (مع إمكانية العلامات الجزئية).
+أخرج JSON بالشكل التالي:
 {
-    "score": رقم,
-    "similarity_percentage": رقم,
-    "strengths": ["نقطة1", "نقطة2"],
-    "weaknesses": ["نقطة1", "نقطة2"],
-    "suggestions": ["اقتراح1", "اقتراح2"],
-    "feedback_summary": "ملخص قصير للتغذية الراجعة"
+    "total_score": مجموع الدرجات,
+    "total_max_score": ${totalScore},
+    "questions": [
+        {
+            "question_number": 1,
+            "student_score": درجة,
+            "max_score": الدرجة القصوى,
+            "feedback": "ملاحظات حول الإجابة",
+            "similarity_percentage": نسبة التشابه
+        }
+    ],
+    "overall_feedback": "ملخص عام عن أداء الطالب",
+    "strengths": ["نقطة قوة", "نقطة قوة"],
+    "weaknesses": ["نقطة ضعف", "نقطة ضعف"]
 }
         `;
         
         const result = await model.generateContent(prompt);
         const responseText = result.response.text();
-        // استخراج JSON من النص (قد يكون محاطاً بـ ```json ... ```)
+        
         let jsonStr = responseText;
         const jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/);
         if(jsonMatch) jsonStr = jsonMatch[1];
@@ -190,91 +300,106 @@ ${studentAnswerText}
             const braceMatch = responseText.match(/\{[\s\S]*\}/);
             if(braceMatch) jsonStr = braceMatch[0];
         }
+        
         try {
             return JSON.parse(jsonStr);
         } catch(e) {
             console.error("JSON Parse Error:", responseText);
             return {
-                score: maxScore * 0.5,
-                similarity_percentage: 50,
-                strengths: ["الإجابة تحتوي على بعض الأفكار الصحيحة"],
-                weaknesses: ["الإجابة غير مكتملة أو غير واضحة"],
-                suggestions: ["مراجعة المصادر الموصى بها والتدرب على كتابة إجابات أكثر تفصيلاً"],
-                feedback_summary: "تحتاج الإجابة إلى تحسين في الدقة والتفاصيل."
+                total_score: 0,
+                total_max_score: totalScore,
+                questions: [],
+                overall_feedback: "تعذر تحليل النتائج",
+                strengths: [],
+                weaknesses: []
             };
         }
     }
 
     // دالة التصحيح الرئيسية
     async function performGrading() {
-        // التحقق من المدخلات
-        if(!currentImageBase64) { showToast("يرجى رفع صورة ورقة إجابة الطالب أولاً", true); return; }
-        const modelAns = modelAnswer.value.trim();
-        if(!modelAns) { showToast("يرجى إدخال الإجابة النموذجية", true); return; }
-        const maxScore = parseInt(maxScoreInput.value) || 10;
-        const question = questionText.value.trim() || "السؤال غير محدد";
-        const exam = examTitle.value.trim() || "امتحان غير محدد";
+        if(!modelImageBase64) { showToast("يرجى رفع صورة نموذج الإجابة أولاً", true); return; }
+        if(!studentImageBase64) { showToast("يرجى رفع صورة ورقة إجابة الطالب أولاً", true); return; }
 
-        // عرض شاشة التحميل
+        resultsCard.style.display = 'block';
         gradingResult.style.display = 'block';
-        gradingResult.innerHTML = '<div class="loading"></div> 🔍 جاري قراءة إجابة الطالب وتحليلها... يرجى الانتظار (قد يستغرق 10-15 ثانية)';
+        gradingResult.innerHTML = '<div class="loading"></div> 📖 جاري تحليل نموذج الإجابة واستخراج الأسئلة والدرجات...';
 
         try {
-            // الخطوة 1: استخراج النص من الصورة
-            gradingResult.innerHTML = '<div class="loading"></div> 📖 جاري استخراج النص من الصورة...';
-            const extractedText = await extractTextFromImage(currentImageBase64);
+            // الخطوة 1: استخراج الأسئلة من نموذج الإجابة
+            const questions = await extractQuestionsFromModel(modelImageBase64);
+            const totalMaxScore = questions.reduce((sum, q) => sum + (q.max_score || 0), 0);
             
-            // الخطوة 2: تقييم الإجابة
-            gradingResult.innerHTML = '<div class="loading"></div> 🎯 جاري تقييم الإجابة ومقارنتها بالنموذج...';
-            const evaluation = await evaluateAnswer(modelAns, extractedText, maxScore, question);
+            gradingResult.innerHTML = '<div class="loading"></div> 📝 جاري استخراج إجابات الطالب...';
             
-            // الخطوة 3: عرض النتائج بشكل جميل
-            const scorePercent = (evaluation.score / maxScore) * 100;
+            // الخطوة 2: استخراج إجابات الطالب
+            const studentAnswers = await extractStudentAnswers(studentImageBase64);
+            
+            gradingResult.innerHTML = '<div class="loading"></div> 🎯 جاري مقارنة الإجابات وتصحيحها...';
+            
+            // الخطوة 3: مقارنة الإجابات
+            const comparison = await compareAnswers(questions, studentAnswers, totalMaxScore);
+            
+            // الخطوة 4: عرض النتائج
+            const scorePercent = (comparison.total_score / comparison.total_max_score) * 100;
             let scoreColor = '#ef4444';
-            if(scorePercent >= 70) scoreColor = '#10b981';
-            else if(scorePercent >= 50) scoreColor = '#f59e0b';
+            let scoreBadge = '<span class="badge-fail">راسب</span>';
+            if(scorePercent >= 70) { scoreColor = '#10b981'; scoreBadge = '<span class="badge-pass">ناجح</span>'; }
+            else if(scorePercent >= 50) { scoreColor = '#f59e0b'; scoreBadge = '<span class="badge-pass">مقبول</span>'; }
+            
+            let questionsHtml = '';
+            for(const q of comparison.questions) {
+                const foundQuestion = questions.find(qq => qq.question_number == q.question_number);
+                const maxScore = q.max_score || (foundQuestion ? foundQuestion.max_score : 0);
+                const percent = (q.student_score / maxScore) * 100;
+                let qColor = '#ef4444';
+                if(percent >= 70) qColor = '#10b981';
+                else if(percent >= 50) qColor = '#f59e0b';
+                
+                questionsHtml += `
+                    <div class="question-result" style="border-right-color: ${qColor};">
+                        <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
+                            <strong>السؤال ${q.question_number}</strong>
+                            <span style="color: ${qColor}; font-weight: bold;">${q.student_score} / ${maxScore}</span>
+                        </div>
+                        <div style="font-size: 13px; margin-top: 8px;">${q.feedback || 'لا توجد ملاحظات'}</div>
+                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 5px;">نسبة التشابه: ${q.similarity_percentage || 0}%</div>
+                    </div>
+                `;
+            }
             
             gradingResult.innerHTML = `
-                <div class="grade-card" style="text-align: center;">
-                    <div class="score-big" style="color: ${scoreColor};">${evaluation.score} / ${maxScore}</div>
-                    <div>نسبة التشابه مع الإجابة النموذجية: ${evaluation.similarity_percentage}%</div>
-                    <div style="margin-top: 10px;">
-                        <span style="background: ${scoreColor}20; padding: 4px 12px; border-radius: 20px;">${scorePercent >= 70 ? '✅ ممتاز' : (scorePercent >= 50 ? '⚠️ جيد' : '❌ يحتاج تحسين')}</span>
-                    </div>
+                <div style="text-align: center; padding: 20px; background: var(--bg-card); border-radius: 24px; margin-bottom: 20px;">
+                    <div class="score-big" style="color: ${scoreColor};">${comparison.total_score} / ${comparison.total_max_score}</div>
+                    <div style="margin-top: 10px;">${scoreBadge}</div>
+                    <div style="margin-top: 5px; font-size: 14px;">نسبة النجاح: ${scorePercent.toFixed(1)}%</div>
                 </div>
                 
-                <div style="margin-top: 20px;">
+                <div style="margin-bottom: 20px;">
+                    <h4>📋 تفاصيل الأسئلة:</h4>
+                    ${questionsHtml}
+                </div>
+                
+                <div style="margin-bottom: 20px;">
                     <h4>💪 نقاط القوة:</h4>
-                    <ul>${evaluation.strengths.map(s => `<li>${s}</li>`).join('')}</ul>
+                    <ul>${comparison.strengths.map(s => `<li>${s}</li>`).join('')}</ul>
                     
                     <h4>📌 نقاط الضعف:</h4>
-                    <ul>${evaluation.weaknesses.map(w => `<li>${w}</li>`).join('')}</ul>
+                    <ul>${comparison.weaknesses.map(w => `<li>${w}</li>`).join('')}</ul>
                     
-                    <h4>📝 اقتراحات للتحسين:</h4>
-                    <ul>${evaluation.suggestions.map(s => `<li>${s}</li>`).join('')}</ul>
-                    
-                    <h4>📋 ملخص التغذية الراجعة:</h4>
-                    <p>${evaluation.feedback_summary}</p>
-                </div>
-                
-                <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-muted);">
-                    <strong>📄 النص المستخرج من صورة الطالب:</strong><br>
-                    <em>"${extractedText.substring(0, 500)}${extractedText.length > 500 ? '...' : ''}"</em>
+                    <h4>📝 الملخص العام:</h4>
+                    <p>${comparison.overall_feedback}</p>
                 </div>
             `;
             
-            // حفظ النتيجة للتصدير
             lastGradingResult = {
-                exam: exam,
-                question: question,
-                modelAnswer: modelAns,
-                studentExtractedText: extractedText,
-                maxScore: maxScore,
-                evaluation: evaluation,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                questions: questions,
+                studentAnswers: studentAnswers,
+                comparison: comparison
             };
             
-            showToast(`✅ تم التصحيح بنجاح! الدرجة: ${evaluation.score}/${maxScore}`);
+            showToast(`✅ تم التصحيح! الدرجة النهائية: ${comparison.total_score}/${comparison.total_max_score}`);
         } catch(err) {
             gradingResult.innerHTML = `<div style="color: var(--danger);">❌ خطأ: ${err.message}</div>`;
             showToast(err.message, true);
@@ -283,27 +408,27 @@ ${studentAnswerText}
 
     // تصدير النتائج
     exportResultsBtn.onclick = () => {
-        if(!lastGradingResult) { showToast("لا توجد نتائج لتصديرها. قم بتصحيح إجابة أولاً.", true); return; }
+        if(!lastGradingResult) { showToast("لا توجد نتائج لتصديرها. قم بالتصحيح أولاً.", true); return; }
         const blob = new Blob([JSON.stringify(lastGradingResult, null, 2)], {type:'application/json'});
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = `grading_result_${new Date().toISOString().slice(0,19)}.json`;
+        a.download = `exam_grading_${new Date().toISOString().slice(0,19)}.json`;
         a.click();
         showToast("تم تصدير النتائج");
     };
 
-    // ربط زر التصحيح
     gradeBtn.onclick = performGrading;
 
     // الثيم
     themeToggle.onclick = () => {
         document.body.classList.toggle('light-mode');
-        localStorage.setItem('maek7_grading_theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+        localStorage.setItem('maek7_adv_grading_theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
     };
-    const savedKey = localStorage.getItem('maek7_grading_key');
+    
+    const savedKey = localStorage.getItem('maek7_adv_grading_key');
     if(savedKey) apiInput.value = savedKey;
     updateApiStatus();
-    const savedTheme = localStorage.getItem('maek7_grading_theme');
+    const savedTheme = localStorage.getItem('maek7_adv_grading_theme');
     if(savedTheme === 'light') document.body.classList.add('light-mode');
 </script>
 </body>
